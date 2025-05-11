@@ -9,25 +9,24 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 #define SHOULDER 0  // Channel for shoulder servo
 #define ELBOW 1     // Channel for elbow servo
-#define FINGERS_R 2 // Channel for finger servo (right fingers)
-#define FINGERS_L 3 // Channel for finger servo (right fingers)
+#define FINGER_1 4 // Channel for finger servo ("index")
+#define FINGER_2 5 // Channel for finger servo ("medium")
+#define FINGER_3 6 // Channel for finger servo ("ring")
+#define FINGER_4 7 // Channel for finger servo ("pinky")
 
 // Starting angles
 #define SHOULDER_START 0    // TBD
 #define ELBOW_START 90      // TBD
-#define FINGERS_R_OPEN 0   // TBD 
-#define FINGERS_L_OPEN 0   // TBD
-// note that fingers_l and fingers_r could be defined by the same global parameters but for now I wanted to fine-tune them individually
+#define FINGER_OPEN 0   // TBD 
 
 // Movement angles
 #define SHOULDER_RAISE 90      // Shoulder lifts up
 #define ELBOW_UP       110     // Slight lift
 #define ELBOW_DOWN     70      // Slight drop
-#define FINGERS_R_CLOSED 120
-#define FINGERS_L_CLOSED 120
+#define FINGER_CLOSED 120
 
 /* --- UTILITY FUNCTIONS --- */
-// Map an angle (0Ã¢ÂÂ180) to a pulse length (150Ã¢ÂÂ600)
+// Map an angle to a pulse length
 int angleToPulse(int angle) {
   return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
 }
@@ -79,58 +78,119 @@ void smoothDualMovement(uint8_t ch1, int start1, int end1, int speed1,
   setServoAngle(ch2, end2);
 }
 
-// Simultaneously move three motors smoothly from their respective startN to endN angle
-void smoothTripleMovement(
-  uint8_t ch1, int start1, int end1, int speed1,
-  uint8_t ch2, int start2, int end2, int speed2,
-  uint8_t ch3, int start3, int end3, int speed3,
-  int stepDelay ) {
-  int angle1 = start1;
-  int angle2 = start2;
-  int angle3 = start3;
+// Simultaneously move 2 fingers smoothly from start to end angle
+void smoothFingerMovement(uint8_t ch1, uint8_t ch2, int start, int end, int stepDelay) {
 
-  int step1 = (start1 < end1) ? speed1 : -speed1;
-  int step2 = (start2 < end2) ? speed2 : -speed2;
-  int step3 = (start3 < end3) ? speed3 : -speed3;
+  int angle = start;
+  int step = (start < end) ? 2 : -2;
 
-  while (angle1 != end1 || angle2 != end2 || angle3 != end3) {
-    if (angle1 != end1) {
-      setServoAngle(ch1, angle1);
-      angle1 += step1;
-    }
-
-    if (angle2 != end2) {
-      setServoAngle(ch2, angle2);
-      angle2 += step2;
-    }
-
-    if (angle3 != end3) {
-      setServoAngle(ch3, angle3);
-      angle3 += step3;
-    }
+  while (angle != end) {
+    setServoAngle(ch1, angle);
+    setServoAngle(ch2, angle);
+    angle += step;
 
     delay(stepDelay);
   }
 
-  // Final correction to hit exact angles
-  setServoAngle(ch1, end1);
-  setServoAngle(ch2, end2);
-  setServoAngle(ch3, end3);
+  // Make sure both servos land exactly at final positions
+  setServoAngle(ch1, end);
+  setServoAngle(ch2, end);
 }
+
+// Simultaneously move all 4 fingers smoothly from start to end angle
+void smoothFingerMovement(uint8_t ch1, uint8_t ch2, uint8_t ch3, uint8_t ch4, int start, int end, int stepDelay) {
+
+  int angle = start;
+  int step = (start < end) ? 2 : -2;
+
+  while (angle != end) {
+    setServoAngle(ch1, angle);
+    setServoAngle(ch2, angle);
+    setServoAngle(ch3, angle);
+    setServoAngle(ch4, angle);
+    angle += step;
+
+    delay(stepDelay);
+  }
+
+  // Make sure both servos land exactly at final positions
+  setServoAngle(ch1, end);
+  setServoAngle(ch2, end);
+  setServoAngle(ch3, end);
+  setServoAngle(ch4, end);
+}
+
+// Play paper choice by moving the elbow down and extending all fingers
+void playPaper() {
+  int angleElbow = ELBOW_UP;
+  int angleFinger = FINGER_CLOSED;
+
+  int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
+  int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 2 : -2;
+
+  while (angleElbow != ELBOW_DOWN || angleFinger != FINGER_OPEN) {
+    if (angleElbow != ELBOW_DOWN) {
+      setServoAngle(ELBOW, angleElbow);
+      angleElbow += stepElbow;
+    }
+    if (angleFinger != FINGER_OPEN) {
+      setServoAngle(FINGER_1, angleFinger);
+      setServoAngle(FINGER_2, angleFinger);
+      setServoAngle(FINGER_3, angleFinger);
+      setServoAngle(FINGER_4, angleFinger);
+      angleFinger += stepFinger;
+    }
+
+    delay(5);
+  }
+
+  // Final correction to hit exact angles
+  setServoAngle(ELBOW, ELBOW_DOWN);
+  setServoAngle(FINGER_1, FINGER_OPEN);
+  setServoAngle(FINGER_2, FINGER_OPEN);
+  setServoAngle(FINGER_3, FINGER_OPEN);
+  setServoAngle(FINGER_4, FINGER_OPEN);
+}
+
+// Play scissors choice by moving the elbow down and extending two fingers
+void playScissors() {
+  int angleElbow = ELBOW_UP;
+  int angleFinger = FINGER_CLOSED;
+
+  int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
+  int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 2 : -2;
+
+  while (angleElbow != ELBOW_DOWN || angleFinger != FINGER_OPEN) {
+    if (angleElbow != ELBOW_DOWN) {
+      setServoAngle(ELBOW, angleElbow);
+      angleElbow += stepElbow;
+    }
+    if (angleFinger != FINGER_OPEN) {
+      setServoAngle(FINGER_1, angleFinger);
+      setServoAngle(FINGER_2, angleFinger);
+      angleFinger += stepFinger;
+    }
+
+    delay(5);
+  }
+
+  // Final correction to hit exact angles
+  setServoAngle(ELBOW, ELBOW_DOWN);
+  setServoAngle(FINGER_1, FINGER_OPEN);
+  setServoAngle(FINGER_2, FINGER_OPEN);
+}
+
 
 
 /* --- GAME --- */
 void play() {
   // Shoulder raise
-  for(int angle = SHOULDER_START; angle <= SHOULDER_RAISE; angle += 1) {
-    setServoAngle(SHOULDER, angle);
-    delay(20);
-  }
+  smoothMovement(SHOULDER, SHOULDER_START, SHOULDER_RAISE, 20);
 
   delay(2000);
 
   // Close all fingers
-  smoothDualMovement(FINGERS_R, FINGERS_R_OPEN, FINGERS_R_CLOSED, 1, FINGERS_L, FINGERS_L_OPEN, FINGERS_L_CLOSED, 1, 10);
+  smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_OPEN, FINGER_CLOSED, 10);
 
   // Elbow bounce
   for (int i = 0; i < 2; i++) {
@@ -146,6 +206,7 @@ void play() {
   // Play choice
   int choice = random(0, 3); // 0 = rock, 1 = paper, 2 = scissors
   
+  // Last bounce and display of selected gesture
   smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 20);
   delay(100);
   if (choice == 0) {
@@ -154,23 +215,22 @@ void play() {
     smoothMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 20);
   } else if (choice == 1) {
     Serial.println("PAPER");
-    smoothTripleMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 1, FINGERS_R, FINGERS_R_CLOSED, FINGERS_R_OPEN, 2, FINGERS_L, FINGERS_L_CLOSED, FINGERS_L_OPEN, 2,  10);
+    playPaper();
   } else {
     Serial.println("SCISSORS");
-    smoothDualMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 1, FINGERS_L, FINGERS_L_CLOSED, FINGERS_L_OPEN, 2, 10);
+    playScissors();
   }
 
   delay(5000);
 
   // go back to starting position
   if(choice == 0) {
-    smoothDualMovement(FINGERS_R, FINGERS_R_CLOSED, FINGERS_R_OPEN, 1, FINGERS_L, FINGERS_L_CLOSED, FINGERS_L_OPEN, 1, 10);
+    smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_CLOSED, FINGER_OPEN, 10);
   } else if (choice == 2) {
-    smoothMovement(FINGERS_R, FINGERS_R_CLOSED, FINGERS_R_OPEN, 20);
+    smoothFingerMovement(FINGER_3, FINGER_4, FINGER_CLOSED, FINGER_OPEN, 10);
   }
 
   smoothDualMovement(SHOULDER, SHOULDER_RAISE, SHOULDER_START, 3, ELBOW, ELBOW_DOWN, ELBOW_START, 1, 20);
-
 
 }
 
@@ -184,8 +244,10 @@ void setup() {
   // Set servos to starting angle
   setServoAngle(SHOULDER, SHOULDER_START);
   setServoAngle(ELBOW, ELBOW_START);
-  setServoAngle(FINGERS_R, FINGERS_R_OPEN);
-  setServoAngle(FINGERS_L, FINGERS_L_OPEN);
+  setServoAngle(FINGER_1, FINGER_OPEN);
+  setServoAngle(FINGER_2, FINGER_OPEN);
+  setServoAngle(FINGER_3, FINGER_OPEN);
+  setServoAngle(FINGER_4, FINGER_OPEN);
 
   delay(100);
   Serial.println("READY");
@@ -196,7 +258,6 @@ void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     if (command == "START") {
-      //randomSeed(analogRead(A0) + micros()); // Use current time (microseconds since boot), leave A0 unconnected
       while (Serial.available() == 0);  // Wait for the seed
       long seed = Serial.readStringUntil('\n').toInt();
       randomSeed(seed);
@@ -208,12 +269,11 @@ void loop() {
     // Keep servos in starting angle
     setServoAngle(SHOULDER, SHOULDER_START);
     setServoAngle(ELBOW, ELBOW_START);
-    setServoAngle(FINGERS_R, FINGERS_R_OPEN);
-    setServoAngle(FINGERS_L, FINGERS_L_OPEN);
+    setServoAngle(FINGER_1, FINGER_OPEN);
+    setServoAngle(FINGER_2, FINGER_OPEN);
+    setServoAngle(FINGER_3, FINGER_OPEN);
+    setServoAngle(FINGER_4, FINGER_OPEN);
   }
   
   delay(100);
-  
-  
-
 }
