@@ -20,7 +20,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define FINGER_OPEN 0   // TBD 
 
 // Movement angles
-#define SHOULDER_RAISE 90      // Shoulder lifts up
+#define SHOULDER_RAISE 60      // Shoulder lifts up
 #define ELBOW_UP       110     // Slight lift
 #define ELBOW_DOWN     70      // Slight drop
 #define FINGER_CLOSED 120
@@ -273,6 +273,39 @@ void loop() {
     setServoAngle(FINGER_2, FINGER_OPEN);
     setServoAngle(FINGER_3, FINGER_OPEN);
     setServoAngle(FINGER_4, FINGER_OPEN);
+
+
+    //INSTRUCTIONS FOR FINE-TUNING (single) MOTOR LIMITS
+    // uncomment the line for the motor you are testing, set the appropriate angle and check. I suggest having only one uncommented line at a time to test individual movements
+    // If you found the correct angle, go up to the define section (line 22) and set the angle as under "movement angles"
+    // In the next lines, I usually started by setting a lower angle than the one in the define section, so remember checking in the end
+    delay(2000);
+    // DRIVER PIN 0
+    // SHOULDER_RAISE: how much the shoulder raises from starting position.
+    // (Uncomment next line for testing shoulder)
+    //setServoAngle(SHOULDER, 30);    // CHANGE ANGLE VALUE TO TUNE
+
+    // DRIVER PIN 1
+    // ELBOW_UP: angle at which the forearm is up. Note that starting angle for elbow is 90, so ELBOW_UP and ELBOW_DOWN will be values around 80 and 100.
+    // UP and DOWN angle do not necessarily need to be UP > DOWN, the code should already account for both scenarios
+    // (Uncomment next line for testing elbow_up)
+    //setServoAngle(ELBOW, 100);    // CHANGE ANGLE VALUE TO TUNE. If values > 90 turn the elbow down, use values < 90
+
+    // (Uncomment next line for testing elbow_down)
+    //setServoAngle(ELBOW, 80);    // CHANGE ANGLE VALUE TO TUNE. If values < 90 turn the elbow up, use values > 90
+
+    // DRIVER PIN 4 (index), 5 (middle), 6 (ring), 7 (pinky)
+    // FINGER_CLOSED: at what angle the finger is completely closed.
+    // (Uncomment next line for testing finger_N)
+    //setServoAngle(FINGER_1, 90);    // CHANGE ANGLE VALUE TO TUNE
+    //setServoAngle(FINGER_2, 90);    // CHANGE ANGLE VALUE TO TUNE
+    //setServoAngle(FINGER_3, 90);    // CHANGE ANGLE VALUE TO TUNE
+    //setServoAngle(FINGER_4, 90);    // CHANGE ANGLE VALUE TO TUNE
+
+    delay(3000);
+
+    // To test whether the whole sequence works: comment all test instructions above (lines 278-305). Open serial monitor (under "tools").
+    // When serial monitor prints "READY", write "START". Then input a random number (e.g., 123) and the game should start.
   }
   
   delay(100);
