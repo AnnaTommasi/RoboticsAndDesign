@@ -262,6 +262,8 @@ void loop() {
       long seed = Serial.readStringUntil('\n').toInt();
       randomSeed(seed);
 
+      Serial.println("ACK");
+
       play();
     }
   }
