@@ -28,5 +28,12 @@ if com.in_waiting > 0:
 	print(msg)
 	if msg == "CALL OA1":
 		print("Calling second arduino")
-		result = play_rock_paper_scissors()
-		print(result)
+		while act_1.in_waiting == 0:
+			pass
+		msg = act_1.readline().decode().strip()
+		print(msg)
+		if msg == "ACK":
+			print("Second arduino acknowledges call")
+			com.write(b'OA1 ACK\n')
+			result = play_rock_paper_scissors()
+			print(result)
