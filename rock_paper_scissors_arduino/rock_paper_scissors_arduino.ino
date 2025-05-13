@@ -17,13 +17,13 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 // Starting angles
 #define SHOULDER_START 0    // TBD
 #define ELBOW_START 90      // TBD
-#define FINGER_OPEN 0   // TBD 
+#define FINGER_OPEN 180   // TBD 
 
 // Movement angles
 #define SHOULDER_RAISE 60      // Shoulder lifts up
 #define ELBOW_UP       110     // Slight lift
 #define ELBOW_DOWN     70      // Slight drop
-#define FINGER_CLOSED 120
+#define FINGER_CLOSED 60
 
 /* --- UTILITY FUNCTIONS --- */
 // Map an angle to a pulse length
