@@ -9,7 +9,7 @@ import math
 
 cap = cv2.VideoCapture(0)
 
-detector = HandDetector(maxHands=6)
+detector = HandDetector(maxHands=2)
 
 # Define center of focus
 focusX = int(480 / 2)
@@ -66,6 +66,8 @@ while True:
     cv2.imshow("image", frame)
     if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
         break
+    
+    time.sleep(0.05)
 
 cap.release()
 cv2.destroyAllWindows()

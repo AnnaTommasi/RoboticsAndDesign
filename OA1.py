@@ -2,7 +2,6 @@
 
 import cv2
 from HandTrackingModule import HandDetector
-from picamera2 import Picamera2
 import time
 import serial
 import random
@@ -11,25 +10,23 @@ import math
 def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
     ser = serial.Serial(arduino_port, 9600)
     time.sleep(2)  # wait for Arduino to reset
+    
+    cam = cv2.VideoCapture(0)
+    detector = HandDetector(maxHands=2)
 
-    cam = Picamera2()
-    config = cam.create_preview_configuration(
-        main={"size": (640, 480), "format": "RGB888"},
-        buffer_count=2
-    )
-    cam.configure(config)
+
     # Define focus point
-    frame_width, frame_height = config["main"]["size"]
+    frame_width = 480
+    frame_height = 320
     focusX = int(frame_width / 2)
     focusY = int(frame_height / 2)
     focusPoint = (focusX, focusY)
 
-    cam.start()
-
     def distance(pt1, pt2):
         return math.hypot(pt1[0] - pt2[0], pt1[1] - pt2[1])
 
-    # Send START signal and seed
+
+    # Send START signal and seed to Arduino
     ser.write(b'START\n')
     time.sleep(0.05)
     seed = random.randint(0, 100000)
@@ -39,26 +36,33 @@ def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
     while True:
         if ser.in_waiting > 0:
             robot_choice = ser.readline().decode().strip()
-            detector = HandDetector(maxHands=8)
             
-            print(f"START")
+            print(f"----------START----------")
 
             time.sleep(0.5) # wait half a second before detecting the player move
 
             gesture_counts = {"ROCK": 0, "PAPER": 0, "SCISSORS": 0}
             valid_frames = 0
             invalid_frames = 0
-            capture_duration = 2  # seconds
+            capture_duration = 3  # seconds
             start_time = time.time()
 
             while time.time() - start_time < capture_duration:
-                img = cam.capture_array()
-                hands, img = detector.findHands(img)
+                success, frame = cam.read()
+                if not success:
+                    break
+                    
+                # resize (and flip) frame for better image recognition performance
+                frame = cv2.resize(frame, (480, 320))
+                frame = cv2.flip(frame, -1)
+                
+                hands, frame = detector.findHands(frame)
 
                 playerMove = "INVALID"
                 playerHand = None
                 minDist = float("inf")
 
+                # select hand closest to the focus point
                 for hand in hands:
                     wrist = hand["lmList"][0][:2]
                     dist = distance(wrist, focusPoint)
@@ -84,6 +88,7 @@ def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
                         invalid_frames += 1
 
                 cv2.waitKey(1)
+                
 
             # Determine final move based on frequency
             if valid_frames == 0:
@@ -105,10 +110,8 @@ def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
             print(gesture_counts)
             print(invalid_frames)
             print(f"Outcome: {outcome}")
-            cam.stop()
-
-            return {
-                "robot": robot_choice,
-                "player": final_playerMove,
-                "outcome": outcome
-            }
+            
+            break
+            
+    cam.release()
+    return outcome
