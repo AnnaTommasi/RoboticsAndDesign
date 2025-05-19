@@ -1,34 +1,34 @@
+# Code for testing and debugging rock paper scissors image recognition.
+# This python program uses a continuous recording to determine recognition accuracy
+
 import cv2
 from HandTrackingModule import HandDetector
-from picamera2 import Picamera2
 import time
 import math
 
 
-cam = Picamera2()
-config = cam.create_preview_configuration(
-    main={"size": (640, 480), "format": "RGB888"},
-    buffer_count=2
-)
-cam.configure(config)
-# Define focus point
-frame_width, frame_height = config["main"]["size"]
-focusX = int(frame_width / 2)
-focusY = int(frame_height / 2)
+cap = cv2.VideoCapture(0)
+
+detector = HandDetector(maxHands=6)
+
+# Define center of focus
+focusX = int(480 / 2)
+focusY = int(320 / 2)
 focusPoint = (focusX, focusY)
-
-cam.start()
-
-detector = HandDetector(maxHands=8)
 
 def distance(pt1, pt2):
     return math.hypot(pt1[0] - pt2[0], pt1[1] - pt2[1])
 
 
 while True:
-    img = cam.capture_array()
-
-    hands, img = detector.findHands(img)
+    success, frame = cap.read()
+    if not success:
+        break
+        
+    frame = cv2.resize(frame, (480, 320))
+    frame = cv2.flip(frame, -1)
+    
+    hands, frame = detector.findHands(frame)
 
     playerMove = "No hand detected"
     fingers = [0, 0, 0, 0, 0]
@@ -46,7 +46,6 @@ while True:
 
     if playerHand:
         fingers = detector.getFingerStateByAngle(playerHand)
-        #fingers = detector.fingerFoldAngles(hand, fingerName="Pinky", img=img)
 
         if fingers == [0, 0, 0, 0, 0] or fingers == [1, 0, 0, 0, 0]:
             playerMove = "rock"
@@ -59,15 +58,14 @@ while True:
 
 
     # Display current move
-    #cv2.circle(img, focusPoint, 10, (255, 0, 255), cv2.FILLED)
-    cv2.putText(img, f"Move: {playerMove}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
-    #cv2.putText(img, f"Move: {fingers}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 3)
+    cv2.circle(frame, focusPoint, 5, (255, 0, 255), cv2.FILLED)
+    cv2.putText(frame, f"Move: {playerMove}", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
+    #cv2.putText(frame, f"Move: {fingers}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 3)
 
 
-    cv2.imshow("image", img)
-    time.sleep(1);
+    cv2.imshow("image", frame)
     if cv2.waitKey(1) & 0xFF == 27:  # ESC to exit
         break
 
-cam.stop()
+cap.release()
 cv2.destroyAllWindows()
