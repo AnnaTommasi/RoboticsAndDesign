@@ -2,8 +2,8 @@ from OA1 import play_rock_paper_scissors
 import serial
 import time
 
-act_1 = serial.Serial('/dev/ttyACM1', 9600)
-com = serial.Serial('/dev/ttyACM0', 9600)
+act_1 = serial.Serial('/dev/ttyACM0', 9600)
+com = serial.Serial('/dev/ttyACM1', 9600)
 time.sleep(2)  # wait for Arduino to reset
 
 # Wait for Arduino to be ready
