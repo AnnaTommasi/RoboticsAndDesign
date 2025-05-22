@@ -15,15 +15,15 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define FINGER_4 7 // Channel for finger servo ("pinky")
 
 // Starting angles
-#define SHOULDER_START 0    // TBD
+#define SHOULDER_START 60    // TBD
 #define ELBOW_START 90      // TBD
 #define FINGER_OPEN 150   // TBD 
 
 // Movement angles
-#define SHOULDER_RAISE 60      // Shoulder lifts up
-#define ELBOW_UP       110     // Slight lift
-#define ELBOW_DOWN     70      // Slight drop
-#define FINGER_CLOSED 30
+#define SHOULDER_RAISE 120      // Shoulder lifts up
+#define ELBOW_UP       90     // Slight lift
+#define ELBOW_DOWN     45      // Slight drop
+#define FINGER_CLOSED 40
 
 /* --- UTILITY FUNCTIONS --- */
 // Map an angle to a pulse length
@@ -41,7 +41,9 @@ void setServoAngle(uint8_t channel, int angle) {
 void smoothMovement(uint8_t channel, int startAngle, int endAngle, int stepDelay) {
   int step = (startAngle < endAngle) ? 2 : -2;
 
-  for (int angle = startAngle; angle != endAngle; angle += step) {
+  for (int angle = startAngle;
+       (step > 0 && angle < endAngle) || (step < 0 && angle > endAngle);
+       angle += step) {
     setServoAngle(channel, angle);
     delay(stepDelay); // Delay per step, in ms
   }
@@ -59,21 +61,31 @@ void smoothDualMovement(uint8_t ch1, int start1, int end1, int speed1,
   int step1 = (start1 < end1) ? speed1 : -speed1;
   int step2 = (start2 < end2) ? speed2 : -speed2;
 
-  while (angle1 != end1 || angle2 != end2) {
-    if (angle1 != end1) {
+  bool done1 = false, done2 = false;
+
+  while (!done1 || !done2) {
+    if (!done1) {
       setServoAngle(ch1, angle1);
       angle1 += step1;
+      if ((step1 > 0 && angle1 >= end1) || (step1 < 0 && angle1 <= end1)) {
+        angle1 = end1;
+        done1 = true;
+      }
     }
 
-    if (angle2 != end2) {
+    if (!done2) {
       setServoAngle(ch2, angle2);
       angle2 += step2;
+      if ((step2 > 0 && angle2 >= end2) || (step2 < 0 && angle2 <= end2)) {
+        angle2 = end2;
+        done2 = true;
+      }
     }
 
     delay(stepDelay);
   }
 
-  // Make sure both servos land exactly at final positions
+  // Final correction (may be redundant but ensures exact position)
   setServoAngle(ch1, end1);
   setServoAngle(ch2, end2);
 }
@@ -82,9 +94,9 @@ void smoothDualMovement(uint8_t ch1, int start1, int end1, int speed1,
 void smoothFingerMovement(uint8_t ch1, uint8_t ch2, int start, int end, int stepDelay) {
 
   int angle = start;
-  int step = (start < end) ? 2 : -2;
+  int step = (start < end) ? 4 : -4;
 
-  while (angle != end) {
+  while ((step > 0 && angle < end) || (step < 0 && angle > end)) {
     setServoAngle(ch1, angle);
     setServoAngle(ch2, angle);
     angle += step;
@@ -101,9 +113,9 @@ void smoothFingerMovement(uint8_t ch1, uint8_t ch2, int start, int end, int step
 void smoothFingerMovement(uint8_t ch1, uint8_t ch2, uint8_t ch3, uint8_t ch4, int start, int end, int stepDelay) {
 
   int angle = start;
-  int step = (start < end) ? 2 : -2;
+  int step = (start < end) ? 4 : -4;
 
-  while (angle != end) {
+  while ((step > 0 && angle < end) || (step < 0 && angle > end)) {
     setServoAngle(ch1, angle);
     setServoAngle(ch2, angle);
     setServoAngle(ch3, angle);
@@ -128,23 +140,35 @@ void playPaper() {
   int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
   int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 4 : -4;
 
-  while (angleElbow != ELBOW_DOWN || angleFinger != FINGER_OPEN) {
-    if (angleElbow != ELBOW_DOWN) {
+  bool doneElbow = false;
+  bool doneFinger = false;
+
+  while (!doneElbow || !doneFinger) {
+    if (!doneElbow) {
       setServoAngle(ELBOW, angleElbow);
       angleElbow += stepElbow;
+      if ((stepElbow > 0 && angleElbow >= ELBOW_DOWN) || (stepElbow < 0 && angleElbow <= ELBOW_DOWN)) {
+        angleElbow = ELBOW_DOWN;
+        doneElbow = true;
+      }
     }
-    if (angleFinger != FINGER_OPEN) {
+
+    if (!doneFinger) {
       setServoAngle(FINGER_1, angleFinger);
       setServoAngle(FINGER_2, angleFinger);
       setServoAngle(FINGER_3, angleFinger);
       setServoAngle(FINGER_4, angleFinger);
       angleFinger += stepFinger;
+      if ((stepFinger > 0 && angleFinger >= FINGER_OPEN) || (stepFinger < 0 && angleFinger <= FINGER_OPEN)) {
+        angleFinger = FINGER_OPEN;
+        doneFinger = true;
+      }
     }
 
     delay(5);
   }
 
-  // Final correction to hit exact angles
+  // Final correction
   setServoAngle(ELBOW, ELBOW_DOWN);
   setServoAngle(FINGER_1, FINGER_OPEN);
   setServoAngle(FINGER_2, FINGER_OPEN);
@@ -160,21 +184,33 @@ void playScissors() {
   int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
   int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 4 : -4;
 
-  while (angleElbow != ELBOW_DOWN || angleFinger != FINGER_OPEN) {
-    if (angleElbow != ELBOW_DOWN) {
+  bool doneElbow = false;
+  bool doneFinger = false;
+
+  while (!doneElbow || !doneFinger) {
+    if (!doneElbow) {
       setServoAngle(ELBOW, angleElbow);
       angleElbow += stepElbow;
+      if ((stepElbow > 0 && angleElbow >= ELBOW_DOWN) || (stepElbow < 0 && angleElbow <= ELBOW_DOWN)) {
+        angleElbow = ELBOW_DOWN;
+        doneElbow = true;
+      }
     }
-    if (angleFinger != FINGER_OPEN) {
+
+    if (!doneFinger) {
       setServoAngle(FINGER_1, angleFinger);
       setServoAngle(FINGER_2, angleFinger);
       angleFinger += stepFinger;
+      if ((stepFinger > 0 && angleFinger >= FINGER_OPEN) || (stepFinger < 0 && angleFinger <= FINGER_OPEN)) {
+        angleFinger = FINGER_OPEN;
+        doneFinger = true;
+      }
     }
 
     delay(5);
   }
 
-  // Final correction to hit exact angles
+  // Final correction to exact angles
   setServoAngle(ELBOW, ELBOW_DOWN);
   setServoAngle(FINGER_1, FINGER_OPEN);
   setServoAngle(FINGER_2, FINGER_OPEN);
@@ -264,6 +300,18 @@ void loop() {
 
       play();
     }
+    if (command == "DEBUG") {
+      delay(3000);
+      smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_OPEN, FINGER_CLOSED, 5);
+      delay(2000);      
+      smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_CLOSED, FINGER_OPEN, 5);
+      delay(2000);      
+      smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_OPEN, FINGER_CLOSED, 5);
+      delay(2000);      
+      smoothFingerMovement(FINGER_1, FINGER_2, FINGER_CLOSED, FINGER_OPEN, 5);
+      delay(2000);      
+      smoothFingerMovement(FINGER_3, FINGER_4, FINGER_CLOSED, FINGER_OPEN, 5);
+    }
   }
   // Keep servos in starting angle
   setServoAngle(SHOULDER, SHOULDER_START);
@@ -273,43 +321,18 @@ void loop() {
   setServoAngle(FINGER_3, FINGER_OPEN);
   setServoAngle(FINGER_4, FINGER_OPEN);
 
-
-  //INSTRUCTIONS FOR FINE-TUNING (single) MOTOR LIMITS
-  // uncomment the line for the motor you are testing, set the appropriate angle and check. I suggest having only one uncommented line at a time to test individual movements
-  // If you found the correct angle, go up to the define section (line 22) and set the angle as under "movement angles"
-  // In the next lines, I usually started by setting a lower angle than the one in the define section, so remember checking in the end
+ /* delay(2000);
+  //setServoAngle(ELBOW, ELBOW_DOWN);
+  smoothMovement(SHOULDER, SHOULDER_START, SHOULDER_RAISE, 20);
   delay(2000);
-  // DRIVER PIN 0
-  // SHOULDER_RAISE: how much the shoulder raises from starting position.
-  // (Uncomment next line for testing shoulder)
-  //setServoAngle(SHOULDER, 30);    // CHANGE ANGLE VALUE TO TUNE
+  smoothMovement(SHOULDER, SHOULDER_RAISE, SHOULDER_START, 20);
 
-  // DRIVER PIN 1
-  // ELBOW_UP: angle at which the forearm is up. Note that starting angle for elbow is 90, so ELBOW_UP and ELBOW_DOWN will be values around 80 and 100.
-  // UP and DOWN angle do not necessarily need to be UP > DOWN, the code should already account for both scenarios
-  // (Uncomment next line for testing elbow_up)
-  //setServoAngle(ELBOW, 100);    // CHANGE ANGLE VALUE TO TUNE. If values > 90 turn the elbow down, use values < 90
+  //smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 10);
+  //setServoAngle(FINGER_1, FINGER_CLOSED);
+  //setServoAngle(8, 180);
 
-  // (Uncomment next line for testing elbow_down)
-  //setServoAngle(ELBOW, 80);    // CHANGE ANGLE VALUE TO TUNE. If values < 90 turn the elbow up, use values > 90
-
-  // DRIVER PIN 4 (index), 5 (middle), 6 (ring), 7 (pinky)
-  // FINGER_CLOSED: at what angle the finger is completely closed.
-  // (Uncomment next line for testing finger_N)
-  //setServoAngle(FINGER_1, 0);    // CHANGE ANGLE VALUE TO TUNE
-  //setServoAngle(FINGER_2, 90);    // CHANGE ANGLE VALUE TO TUNE
-  //setServoAngle(FINGER_3, 90);    // CHANGE ANGLE VALUE TO TUNE
-  //setServoAngle(FINGER_4, 90);    // CHANGE ANGLE VALUE TO TUNE
-/*
-  smoothMovement(FINGER_1, FINGER_OPEN, FINGER_CLOSED, 5);
-  delay(1000);
-  smoothMovement(FINGER_1, FINGER_CLOSED, FINGER_OPEN, 5);
-
-  delay(3000);
-
-*/
-  // To test whether the whole sequence works: comment all test instructions above (lines 278-305). Open serial monitor (under "tools").
-  // When serial monitor prints "READY", write "START". Then input a random number (e.g., 123) and the game should start.
+  delay(2000);
+  */
 
   
   delay(100);
