@@ -7,7 +7,9 @@ import serial
 import random
 import math
 
-def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
+actuation1_arduino = '/dev/serial/by-id/usb-Arduino__www.arduino.cc__Arduino_Uno_6493534373335160C051-if00'
+
+def play_rock_paper_scissors(arduino_port=actuation1_arduino):
     ser = serial.Serial(arduino_port, 9600)
     time.sleep(2)  # wait for Arduino to reset
     
@@ -110,6 +112,7 @@ def play_rock_paper_scissors(arduino_port='/dev/ttyACM0'):
             print(gesture_counts)
             print(invalid_frames)
             print(f"Outcome: {outcome}")
+            serial.Serial('/dev/ttyACM0', 9600).write(b'LOSE\n')
             
             break
             
