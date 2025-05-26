@@ -15,14 +15,15 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define FINGER_4 7 // Channel for finger servo ("pinky")
 
 // Starting angles
-#define SHOULDER_START 60    // TBD
-#define ELBOW_START 90      // TBD
-#define FINGER_OPEN 150   // TBD 
+#define SHOULDER_START 60
+#define ELBOW_START 90
+#define FINGER_OPEN 150
 
 // Movement angles
 #define SHOULDER_RAISE 120      // Shoulder lifts up
 #define ELBOW_UP       90     // Slight lift
 #define ELBOW_DOWN     45      // Slight drop
+#define ELBOW_PLAYCHOICE 60   // The last time the elbow doesn't drop as much to better show the choice
 #define FINGER_CLOSED 40
 
 /* --- UTILITY FUNCTIONS --- */
@@ -137,7 +138,7 @@ void playPaper() {
   int angleElbow = ELBOW_UP;
   int angleFinger = FINGER_CLOSED;
 
-  int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
+  int stepElbow = (ELBOW_UP < ELBOW_PLAYCHOICE) ? 1 : -1;
   int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 4 : -4;
 
   bool doneElbow = false;
@@ -147,8 +148,8 @@ void playPaper() {
     if (!doneElbow) {
       setServoAngle(ELBOW, angleElbow);
       angleElbow += stepElbow;
-      if ((stepElbow > 0 && angleElbow >= ELBOW_DOWN) || (stepElbow < 0 && angleElbow <= ELBOW_DOWN)) {
-        angleElbow = ELBOW_DOWN;
+      if ((stepElbow > 0 && angleElbow >= ELBOW_PLAYCHOICE) || (stepElbow < 0 && angleElbow <= ELBOW_PLAYCHOICE)) {
+        angleElbow = ELBOW_PLAYCHOICE;
         doneElbow = true;
       }
     }
@@ -169,7 +170,7 @@ void playPaper() {
   }
 
   // Final correction
-  setServoAngle(ELBOW, ELBOW_DOWN);
+  setServoAngle(ELBOW, ELBOW_PLAYCHOICE);
   setServoAngle(FINGER_1, FINGER_OPEN);
   setServoAngle(FINGER_2, FINGER_OPEN);
   setServoAngle(FINGER_3, FINGER_OPEN);
@@ -181,7 +182,7 @@ void playScissors() {
   int angleElbow = ELBOW_UP;
   int angleFinger = FINGER_CLOSED;
 
-  int stepElbow = (ELBOW_UP < ELBOW_DOWN) ? 1 : -1;
+  int stepElbow = (ELBOW_UP < ELBOW_PLAYCHOICE) ? 1 : -1;
   int stepFinger = (FINGER_CLOSED < FINGER_OPEN) ? 4 : -4;
 
   bool doneElbow = false;
@@ -191,8 +192,8 @@ void playScissors() {
     if (!doneElbow) {
       setServoAngle(ELBOW, angleElbow);
       angleElbow += stepElbow;
-      if ((stepElbow > 0 && angleElbow >= ELBOW_DOWN) || (stepElbow < 0 && angleElbow <= ELBOW_DOWN)) {
-        angleElbow = ELBOW_DOWN;
+      if ((stepElbow > 0 && angleElbow >= ELBOW_PLAYCHOICE) || (stepElbow < 0 && angleElbow <= ELBOW_PLAYCHOICE)) {
+        angleElbow = ELBOW_PLAYCHOICE;
         doneElbow = true;
       }
     }
@@ -211,7 +212,7 @@ void playScissors() {
   }
 
   // Final correction to exact angles
-  setServoAngle(ELBOW, ELBOW_DOWN);
+  setServoAngle(ELBOW, ELBOW_PLAYCHOICE);
   setServoAngle(FINGER_1, FINGER_OPEN);
   setServoAngle(FINGER_2, FINGER_OPEN);
 }
@@ -230,12 +231,10 @@ void play() {
 
   // Elbow bounce
   for (int i = 0; i < 2; i++) {
-    if(i==0)
-      smoothMovement(ELBOW, ELBOW_START, ELBOW_UP, 20);
-    else
-      smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 20);
+    if(i!=0)
+      smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 15);
     delay(100);
-    smoothMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 20);
+    smoothMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 15);
     delay(100);
   }
 
@@ -243,12 +242,12 @@ void play() {
   int choice = random(0, 3); // 0 = rock, 1 = paper, 2 = scissors
   
   // Last bounce and display of selected gesture
-  smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 20);
+  smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 15);
   delay(100);
   if (choice == 0) {
     Serial.println("ROCK");
     // finger servos do nothing since hand is already closed
-    smoothMovement(ELBOW, ELBOW_UP, ELBOW_DOWN, 20);
+    smoothMovement(ELBOW, ELBOW_UP, ELBOW_PLAYCHOICE, 15);
   } else if (choice == 1) {
     Serial.println("PAPER");
     playPaper();
@@ -266,7 +265,7 @@ void play() {
     smoothFingerMovement(FINGER_3, FINGER_4, FINGER_CLOSED, FINGER_OPEN, 10);
   }
 
-  smoothDualMovement(SHOULDER, SHOULDER_RAISE, SHOULDER_START, 3, ELBOW, ELBOW_DOWN, ELBOW_START, 1, 20);
+  smoothDualMovement(SHOULDER, SHOULDER_RAISE, SHOULDER_START, 3, ELBOW, ELBOW_PLAYCHOICE, ELBOW_START, 1, 20);
 
 }
 
