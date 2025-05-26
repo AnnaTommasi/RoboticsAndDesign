@@ -40,7 +40,13 @@ while True:
                         print("Calling second arduino")
                         result = play_rock_paper_scissors()
                         print(result)
-                 if msg == "CALL OA2":
+                if msg == "CALL OA2":
                         print("Calling the multiplayer game")
                         play_multiplayer_game(com, act_2)
                         #print(result)
+                if msg == "START MOVE":
+                        print("notify movement module here")
+		# check message queue
+        # if people are found: com.write(b'FOUND [NUM_PEOPLE] [FOCUS_ANGLE(0-179)]\n')
+        # ex: com.write(b'FOUND 1 90\n')
+		
