@@ -109,10 +109,9 @@ def play_rock_paper_scissors(arduino_port=actuation1_arduino):
                 outcome = "WIN"
 
             print(f"Robot played: {robot_choice}, user played: {final_playerMove}")
-            print(gesture_counts)
-            print(invalid_frames)
+            #print(gesture_counts)
+            #print(invalid_frames)
             print(f"Outcome: {outcome}")
-            serial.Serial('/dev/ttyACM0', 9600).write(b'LOSE\n')
             
             break
             

@@ -15,12 +15,12 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define FINGER_4 7 // Channel for finger servo ("pinky")
 
 // Starting angles
-#define SHOULDER_START 60
+#define SHOULDER_START 0
 #define ELBOW_START 90
 #define FINGER_OPEN 150
 
 // Movement angles
-#define SHOULDER_RAISE 120      // Shoulder lifts up
+#define SHOULDER_RAISE 65      // Shoulder lifts up
 #define ELBOW_UP       90     // Slight lift
 #define ELBOW_DOWN     45      // Slight drop
 #define ELBOW_PLAYCHOICE 60   // The last time the elbow doesn't drop as much to better show the choice
@@ -299,6 +299,7 @@ void loop() {
 
       play();
     }
+    // Debug code for finger movement
     if (command == "DEBUG") {
       delay(3000);
       smoothFingerMovement(FINGER_1, FINGER_2, FINGER_3, FINGER_4, FINGER_OPEN, FINGER_CLOSED, 5);
@@ -320,19 +321,5 @@ void loop() {
   setServoAngle(FINGER_3, FINGER_OPEN);
   setServoAngle(FINGER_4, FINGER_OPEN);
 
- /* delay(2000);
-  //setServoAngle(ELBOW, ELBOW_DOWN);
-  smoothMovement(SHOULDER, SHOULDER_START, SHOULDER_RAISE, 20);
-  delay(2000);
-  smoothMovement(SHOULDER, SHOULDER_RAISE, SHOULDER_START, 20);
-
-  //smoothMovement(ELBOW, ELBOW_DOWN, ELBOW_UP, 10);
-  //setServoAngle(FINGER_1, FINGER_CLOSED);
-  //setServoAngle(8, 180);
-
-  delay(2000);
-  */
-
-  
   delay(100);
 }

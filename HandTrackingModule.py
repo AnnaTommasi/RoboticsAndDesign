@@ -134,6 +134,54 @@ class HandDetector:
                     fingers.append(0)
         return fingers
 
+        def extendedFingers(self, myHand):
+        """
+        Detects which fingers are extended (open) or closed (folded),
+        accounting for hand orientation (upright or upside down).
+        Returns list: [Thumb, Index, Middle, Ring, Pinky]
+        """
+
+        fingers = []
+        myHandType = myHand["type"]
+        myLmList = myHand["lmList"]
+
+        if self.results.multi_hand_landmarks:
+
+            # Determine if hand is upright or upside down
+            wrist_y = myLmList[0][1]
+            middle_mcp_y = myLmList[9][1]
+            is_upside_down = wrist_y < middle_mcp_y  # wrist above middle knuckle = upside down
+
+            # Thumb (still horizontal check)
+            if myHandType == "Right":
+                if myLmList[self.tipIds[0]][0] > myLmList[self.tipIds[0] - 1][0]:
+                    fingers.append(1)
+                else:
+                    fingers.append(0)
+            else:  # Left hand
+                if myLmList[self.tipIds[0]][0] < myLmList[self.tipIds[0] - 1][0]:
+                    fingers.append(1)
+                else:
+                    fingers.append(0)
+
+            # Other fingers (tip.y vs pip.y), flip logic if upside down
+            for id in range(1, 5):
+                tip_y = myLmList[self.tipIds[id]][1]
+                pip_y = myLmList[self.tipIds[id] - 2][1]
+
+                if not is_upside_down:
+                    if tip_y < pip_y:
+                        fingers.append(1)
+                    else:
+                        fingers.append(0)
+                else:
+                    if tip_y > pip_y:
+                        fingers.append(1)
+                    else:
+                        fingers.append(0)
+
+        return fingers
+
     def fingerFoldAngles(self, myHand, fingerName=None, img=None):
         """
         Calculates the joint angle between three landmarks for each finger:
@@ -147,7 +195,7 @@ class HandDetector:
           - PIP joint (Proximal Interphalangeal)
           - Fingertip (TIP)
 
-        Angles close to 180Â° indicate an extended finger; closer to 0Â° means folded.
+        Angles close to 180° indicate an extended finger; closer to 0° means folded.
 
         Args:
             myHand (dict): A dictionary containing 'lmList' with landmark positions.
@@ -199,7 +247,7 @@ class HandDetector:
 
         return angles, img
 
-    def getFingerStateByAngle(self, myHand, thumbThresh=130, fingerThresh=100):
+    def getFingerStateByAngle(self, myHand, thumbThresh=130, fingerThresh=110):
         """
         Returns the binary finger state [Thumb, Index, Middle, Ring, Pinky] using fold angle thresholds.
 
@@ -207,7 +255,7 @@ class HandDetector:
 
         :param myHand: Dictionary containing hand landmark list under the key 'lmList'
         :param thumbThresh: Angle threshold for the thumb (default=130 degrees)
-        :param fingerThresh: Angle threshold for the other fingers (default=100 degrees)
+        :param fingerThresh: Angle threshold for the other fingers (default=110 degrees)
         :return: List of 5 integers representing finger states [Thumb, Index, Middle, Ring, Pinky]
                  where 1 = extended, 0 = folded
         """
@@ -217,10 +265,10 @@ class HandDetector:
         # Initialize the finger state list
         fingerState = []
 
-        # Thumb: if angle < 90Â°, thumb is extended (1), otherwise folded (0)
+        # Thumb: if angle > 130°, thumb is extended (1), otherwise folded (0)
         fingerState.append(1 if angles["Thumb"] > thumbThresh else 0)
 
-        # Other fingers: if angle < 90Â°, the finger is extended (1), otherwise folded (0)
+        # Other fingers: if angle > 110°, the finger is extended (1), otherwise folded (0)
         for finger in ["Index", "Middle", "Ring", "Pinky"]:
             fingerState.append(1 if angles[finger] > fingerThresh else 0)
 

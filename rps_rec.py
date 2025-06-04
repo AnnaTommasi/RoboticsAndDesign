@@ -7,7 +7,7 @@ import time
 import math
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 detector = HandDetector(maxHands=2)
 
